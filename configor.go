@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"regexp"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Configor struct {
@@ -79,6 +81,22 @@ func (configor *Configor) GetErrorOnUnmatchedKeys() bool {
 	return configor.ErrorOnUnmatchedKeys
 }
 
+// Load will unmarshal configurations to struct from variable that you provide
+func (configor *Configor) LoadString(config interface{}, data string) (err error) {
+	defaultValue := reflect.Indirect(reflect.ValueOf(config))
+	if !defaultValue.CanAddr() {
+		return fmt.Errorf("Config %v should be addressable", config)
+	}
+	configor.processDefaults(config)
+	yaml.UnmarshalStrict([]byte(data), config)
+	if prefix := configor.getENVPrefix(config); prefix == "-" {
+		err = configor.processTags(config)
+	} else {
+		err = configor.processTags(config, prefix)
+	}
+	return nil
+}
+
 // Load will unmarshal configurations to struct from files that you provide
 func (configor *Configor) Load(config interface{}, files ...string) (err error) {
 	defaultValue := reflect.Indirect(reflect.ValueOf(config))
@@ -118,4 +136,9 @@ func ENV() string {
 // Load will unmarshal configurations to struct from files that you provide
 func Load(config interface{}, files ...string) error {
 	return New(nil).Load(config, files...)
+}
+
+// LoadString will unmarshal configurations to struct from YAML string that you provide
+func LoadString(config interface{}, s string) error {
+	return New(nil).LoadString(config, s)
 }

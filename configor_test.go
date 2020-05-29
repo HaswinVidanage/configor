@@ -3,6 +3,7 @@ package configor
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -127,6 +128,33 @@ func TestLoadtestConfigFromTomlWithoutExtension(t *testing.T) {
 			var result testConfig
 			Load(&result, file.Name())
 			if !reflect.DeepEqual(result, config) {
+				t.Errorf("result should equal to original configuration")
+			}
+		}
+	} else {
+		t.Errorf("failed to marshal config")
+	}
+}
+
+func TestLoadStringtest(t *testing.T) {
+	var (
+		config = generateDefaultConfig()
+		buffer bytes.Buffer
+	)
+
+	if err := yaml.NewEncoder(&buffer).Encode(config); err == nil {
+		if file, err := ioutil.TempFile("/tmp", "configor"); err == nil {
+			defer file.Close()
+			defer os.Remove(file.Name())
+			file.Write(buffer.Bytes())
+			b, err := ioutil.ReadFile(file.Name())
+			if err != nil {
+				t.Errorf("failed to open file")
+			}
+			var result testConfig
+			LoadString(&result, string(b))
+			if !reflect.DeepEqual(result, config) {
+				fmt.Println(result)
 				t.Errorf("result should equal to original configuration")
 			}
 		}
