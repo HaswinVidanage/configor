@@ -1,4 +1,4 @@
-module github.com/jinzhu/configor
+module github.com/HaswinVidanage/configor
 
 go 1.12
 
